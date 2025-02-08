@@ -99,7 +99,7 @@ export default function Home() {
       {/* Google AdSense */}
       <script
         async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=YOUR_ADSENSE_CLIENT_ID"
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6862288297154364"
         crossOrigin="anonymous"
       />
 
@@ -245,16 +245,16 @@ export default function Home() {
           </div>
 
           {/* 添加广告位 */}
-          <div className="max-w-[1600px] mx-auto px-4 md:px-8 mb-8">
+          {/* <div className="max-w-[1600px] mx-auto px-4 md:px-8 mb-8">
             <ins
               className="adsbygoogle"
               style={{ display: 'block' }}
-              data-ad-client="YOUR_ADSENSE_CLIENT_ID"
+              data-ad-client="ca-pub-6862288297154364"
               data-ad-slot="YOUR_AD_SLOT_ID"
               data-ad-format="auto"
               data-full-width-responsive="true"
             />
-          </div>
+          </div> */}
         </div>
       </main>
     </>
