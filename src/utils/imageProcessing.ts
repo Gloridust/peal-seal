@@ -37,19 +37,11 @@ export async function extractSeal(
       // 第一步：局部对比度增强
       const enhancedData = enhanceLocalContrast(data, width, height);
       
-      // 第二步：颜色空间转换和分析
+      // 第二步：颜色分析
       for (let i = 0; i < data.length; i += 4) {
         const r = enhancedData[i];
         const g = enhancedData[i + 1];
         const b = enhancedData[i + 2];
-
-        // 转换到 YCbCr 空间
-        const [y, cb, cr] = rgbToYCbCr(r, g, b);
-        // 转换到 HSV 空间
-        const [h, s, v] = rgbToHsv(r, g, b);
-
-        // 计算红色可能性得分 (0-1)
-        const redScore = calculateRedScore(y, cb, cr, h, s, v, params);
 
         const colorScore = calculateColorScore(r, g, b, params.targetColors, params.colorTolerance);
 
@@ -92,41 +84,33 @@ export async function extractSeal(
   });
 }
 
-// RGB 转 YCbCr
-function rgbToYCbCr(r: number, g: number, b: number): [number, number, number] {
-  const y = 0.299 * r + 0.587 * g + 0.114 * b;
-  const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-  const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-  return [y, cb, cr];
-}
+// RGB 转 HSV
+function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
 
-// 计算红色可能性得分
-function calculateRedScore(
-  y: number,
-  cb: number,
-  cr: number,
-  h: number,
-  s: number,
-  v: number,
-  params: ProcessingParams
-): number {
-  // YCbCr 空间中的红色特征
-  const crScore = Math.max(0, Math.min(1, (cr - 128) / 50));
-  const cbScore = Math.max(0, Math.min(1, 1 - Math.abs(cb - 128) / 50));
-  
-  // HSV 空间中的红色特征
-  const hueScore = (h >= 360 - params.hueThreshold || h <= params.hueThreshold) ? 
-    1 : Math.max(0, 1 - Math.min(Math.abs(h), Math.abs(h - 360)) / params.hueThreshold);
-  
-  const satScore = s >= params.satThreshold ? 1 : s / params.satThreshold;
-  const valScore = v >= params.valueThreshold ? 1 : v / params.valueThreshold;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
 
-  // 组合得分
-  const colorScore = (crScore * 0.4 + cbScore * 0.2 + hueScore * 0.4) *
-                    Math.pow(satScore, 0.7) * 
-                    Math.pow(valScore, 0.3);
+  let h = 0;
+  if (delta === 0) {
+    h = 0;
+  } else if (max === r) {
+    h = 60 * (((g - b) / delta) % 6);
+  } else if (max === g) {
+    h = 60 * ((b - r) / delta + 2);
+  } else {
+    h = 60 * ((r - g) / delta + 4);
+  }
 
-  return colorScore;
+  if (h < 0) h += 360;
+
+  const s = max === 0 ? 0 : delta / max;
+  const v = max;
+
+  return [h, s, v];
 }
 
 // 局部对比度增强
@@ -228,34 +212,6 @@ function morphologicalClose(data: Uint8ClampedArray, width: number, height: numb
       data[idx + 3] = minAlpha;
     }
   }
-}
-
-// RGB 转 HSV
-function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-
-  let h = 0;
-  if (delta !== 0) {
-    if (max === r) {
-      h = 60 * (((g - b) / delta) % 6);
-    } else if (max === g) {
-      h = 60 * ((b - r) / delta + 2);
-    } else {
-      h = 60 * ((r - g) / delta + 4);
-    }
-  }
-  if (h < 0) h += 360;
-
-  const s = max === 0 ? 0 : delta / max;
-  const v = max;
-
-  return [h, s, v];
 }
 
 // 中值滤波
