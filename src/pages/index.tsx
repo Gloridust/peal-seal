@@ -59,6 +59,7 @@ export default function Home() {
     }
   }, [originalImage]);
 
+  // extracted-seal 是提取出来的印章图像
   const handleDownload = useCallback(() => {
     if (processedImage) {
       const link = document.createElement('a');
