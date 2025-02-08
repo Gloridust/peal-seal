@@ -1,13 +1,26 @@
 import { useState, useCallback } from 'react';
-import Head from 'next/head';
 import Image from 'next/image';
 import { extractSeal } from '@/utils/imageProcessing';
+import { ParameterSlider } from '@/components/ParameterSlider';
+import { ColorPicker } from '@/components/ColorPicker';
+import { SEO } from '@/components/SEO';
 
 export default function Home() {
   const [originalImage, setOriginalImage] = useState<string>('');
   const [processedImage, setProcessedImage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState('#FF0000');
+  const [customColors, setCustomColors] = useState<string[]>([]);
+  const [params, setParams] = useState({
+    targetColors: ['#FF0000'],  // 默认红色
+    colorTolerance: 0.3,        // 颜色容差
+    hueThreshold: 30,    // 色相阈值范围 (0-180)
+    satThreshold: 0.3,   // 饱和度阈值 (0-1)
+    valueThreshold: 0.2, // 明度阈值 (0-1)
+    denoiseLevel: 0.5,   // 降噪强度 (0-1)
+    sharpness: 0.5,      // 锐化强度 (0-1)
+  });
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,7 +33,7 @@ export default function Home() {
         setIsProcessing(true);
         
         try {
-          const result = await extractSeal(dataUrl);
+          const result = await extractSeal(dataUrl, params);
           setProcessedImage(result);
         } catch (error: unknown) {
           setError('处理图片时出错');
@@ -31,7 +44,23 @@ export default function Home() {
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [params]);
+
+  const handleParamChange = useCallback(async (newParams: typeof params) => {
+    if (!originalImage) return;
+    
+    setParams(newParams);
+    setIsProcessing(true);
+    try {
+      const result = await extractSeal(originalImage, newParams);
+      setProcessedImage(result);
+    } catch (error: unknown) {
+      setError('处理图片时出错');
+      console.error(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [originalImage]);
 
   const handleDownload = useCallback(() => {
     if (processedImage) {
@@ -42,75 +71,229 @@ export default function Home() {
     }
   }, [processedImage]);
 
+  const handleColorSelect = useCallback((color: string) => {
+    setSelectedColor(color);
+    setParams(prev => ({
+      ...prev,
+      targetColors: [color, ...customColors.filter(c => c !== color)]
+    }));
+  }, [customColors]);
+
+  const handleCustomColorAdd = useCallback((color: string) => {
+    setCustomColors(prev => [...prev, color]);
+    setParams(prev => ({
+      ...prev,
+      targetColors: [...prev.targetColors, color]
+    }));
+  }, []);
+
+  const handleCustomColorRemove = useCallback((index: number) => {
+    setCustomColors(prev => prev.filter((_, i) => i !== index));
+    setParams(prev => ({
+      ...prev,
+      targetColors: prev.targetColors.filter((_, i) => i !== index + 1)
+    }));
+  }, []);
+
   return (
     <>
-      <Head>
-        <title>PealSeal 公章剥离器</title>
-        <meta name="description" content="一键提取图片中的公章" />
-      </Head>
+      <SEO />
+      
+      {/* Google AdSense */}
+      <script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=YOUR_ADSENSE_CLIENT_ID"
+        crossOrigin="anonymous"
+      />
 
-      <main className="min-h-screen p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8">
-            PealSeal 公章剥离器
-          </h1>
-          
-          <div className="bg-[var(--md-sys-color-surface-container)] p-6 rounded-lg shadow-sm">
-            <div className="mb-6">
-              <label className="inline-block px-6 py-3 bg-[var(--md-sys-color-primary)] text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
-                上传图片
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
+      <main className="min-h-screen bg-[var(--md-sys-color-surface)]">
+        <div className="max-w-[1600px] mx-auto p-4 md:p-8">
+          <header className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-[var(--md-sys-color-primary)] to-[var(--md-sys-color-primary-container)] inline-block text-transparent bg-clip-text">
+              PealSeal 印章剥离器
+            </h1>
+            <p className="text-[var(--md-sys-color-on-surface-variant)]">
+              快速提取文档中的印章图像，支持透明背景导出
+            </p>
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8">
+            {/* 左侧控制面板 */}
+            <div className="space-y-6">
+              {/* 颜色选择器 */}
+              <ColorPicker
+                selectedColor={selectedColor}
+                customColors={customColors}
+                onColorSelect={handleColorSelect}
+                onCustomColorAdd={handleCustomColorAdd}
+                onCustomColorRemove={handleCustomColorRemove}
+              />
+
+              {/* 参数调节面板 */}
+              <div className="card p-4 space-y-6">
+                <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)]"></span>
+                  处理参数
+                </h3>
+
+                <ParameterSlider
+                  label="颜色容差"
+                  value={params.colorTolerance}
+                  onChange={(value) => handleParamChange({ ...params, colorTolerance: value })}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  info="控制颜色匹配的精确度。值越高，可以匹配更多相近的颜色。如果印章颜色不均匀，可以调高此值。"
                 />
-              </label>
+                <ParameterSlider
+                  label="降噪强度"
+                  value={params.denoiseLevel}
+                  onChange={(value) => handleParamChange({ ...params, denoiseLevel: value })}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  info="控制去除噪点的程度。值越高，可以去除更多杂点，但可能会损失一些细节。如果结果中有很多散点，可以调高此值。"
+                />
+                <ParameterSlider
+                  label="锐化强度"
+                  value={params.sharpness}
+                  onChange={(value) => handleParamChange({ ...params, sharpness: value })}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  info="控制边缘的清晰度。值越高，边缘越清晰，但可能会产生锯齿。如果印章边缘模糊，可以适当调高。"
+                />
+              </div>
+
+              {/* 高级参数（默认折叠） */}
+              <details className="card p-4">
+                <summary className="text-sm font-medium mb-4 flex items-center gap-2 cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)]"></span>
+                  高级参数
+                </summary>
+                <div className="space-y-6 mt-4">
+                  <ParameterSlider
+                    label="色相范围"
+                    value={params.hueThreshold}
+                    onChange={(value) => handleParamChange({ ...params, hueThreshold: value })}
+                    min={0}
+                    max={180}
+                    step={1}
+                    info="控制红色识别的范围。值越大，可以识别更多偏离标准红色的颜色。如果印章颜色偏橙或偏紫，可以适当调高。"
+                  />
+                  <ParameterSlider
+                    label="饱和度阈值"
+                    value={params.satThreshold}
+                    onChange={(value) => handleParamChange({ ...params, satThreshold: value })}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    info="控制颜色的纯度要求。值越低，可以识别更浅的印章。如果印章颜色较浅或褪色，可以调低此值。"
+                  />
+                  <ParameterSlider
+                    label="明度阈值"
+                    value={params.valueThreshold}
+                    onChange={(value) => handleParamChange({ ...params, valueThreshold: value })}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    info="控制亮度要求。值越低，可以识别更暗的部分。如果印章与深色文字重叠，可以调低此值。"
+                  />
+                </div>
+              </details>
             </div>
 
-            {error && (
-              <div className="text-red-500 mb-4">{error}</div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {originalImage && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">原始图片</h3>
-                  <div className="relative aspect-square">
-                    <Image
-                      src={originalImage}
-                      alt="Original"
-                      fill
-                      className="object-contain"
+            {/* 右侧图片区域 */}
+            <div className="card p-6">
+              {!originalImage ? (
+                <div className="h-full flex flex-col items-center justify-center gap-4 border-2 border-dashed border-[var(--md-sys-color-outline)]/20 rounded-lg p-8">
+                  <label className="btn-primary cursor-pointer text-center">
+                    选择图片上传
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
                     />
+                  </label>
+                  <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
+                    支持 JPG、PNG 格式，建议图片分辨率不超过 2000×2000
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {error && (
+                    <div className="p-4 rounded-lg bg-[var(--md-sys-color-error)]/10 text-[var(--md-sys-color-error)] text-center">
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)]"></span>
+                        原始图片
+                      </h3>
+                      <div className="relative aspect-square bg-[var(--md-sys-color-surface-container-low)] rounded-lg overflow-hidden">
+                        <Image
+                          src={originalImage}
+                          alt="Original"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)]"></span>
+                        处理结果
+                      </h3>
+                      {isProcessing ? (
+                        <div className="aspect-square flex items-center justify-center bg-[var(--md-sys-color-surface-container-low)] rounded-lg">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--md-sys-color-primary)] border-t-transparent"></div>
+                            <p className="text-[var(--md-sys-color-on-surface-variant)]">处理中...</p>
+                          </div>
+                        </div>
+                      ) : processedImage && (
+                        <>
+                          <div className="relative aspect-square bg-grid rounded-lg overflow-hidden">
+                            <div className="absolute inset-0 bg-[var(--md-sys-color-surface-container-low)] bg-opacity-50"></div>
+                            <Image
+                              src={processedImage}
+                              alt="Processed"
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              onClick={handleDownload}
+                              className="btn-secondary"
+                            >
+                              下载结果
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
-
-              {isProcessing ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--md-sys-color-primary)] border-t-transparent"></div>
-                </div>
-              ) : processedImage && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">处理结果</h3>
-                  <div className="relative aspect-square bg-grid">
-                    <Image
-                      src={processedImage}
-                      alt="Processed"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <button
-                    onClick={handleDownload}
-                    className="mt-4 px-6 py-2 bg-[var(--md-sys-color-primary)] text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    下载结果
-                  </button>
-                </div>
-              )}
             </div>
+          </div>
+
+          {/* 添加广告位 */}
+          <div className="max-w-[1600px] mx-auto px-4 md:px-8 mb-8">
+            <ins
+              className="adsbygoogle"
+              style={{ display: 'block' }}
+              data-ad-client="YOUR_ADSENSE_CLIENT_ID"
+              data-ad-slot="YOUR_AD_SLOT_ID"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
+            />
           </div>
         </div>
       </main>

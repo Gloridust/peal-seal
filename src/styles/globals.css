@@ -3,23 +3,60 @@
 @tailwind utilities;
 
 :root {
+  /* Light theme */
   --md-sys-color-primary: #006495;
+  --md-sys-color-primary-container: #cde5ff;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-on-primary-container: #001e30;
   --md-sys-color-surface: #fdfcff;
-  --md-sys-color-on-surface: #1a1c1e;
   --md-sys-color-surface-container: #eef8ff;
+  --md-sys-color-surface-container-low: #f8f8fc;
+  --md-sys-color-surface-container-high: #e9eaec;
+  --md-sys-color-on-surface: #1a1c1e;
+  --md-sys-color-on-surface-variant: #42474d;
+  --md-sys-color-outline: #72787e;
+  --md-sys-color-error: #ba1a1a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Dark theme */
     --md-sys-color-primary: #8ccdff;
+    --md-sys-color-primary-container: #004b70;
+    --md-sys-color-on-primary: #003450;
+    --md-sys-color-on-primary-container: #cde5ff;
     --md-sys-color-surface: #1a1c1e;
+    --md-sys-color-surface-container: #1e2022;
+    --md-sys-color-surface-container-low: #1a1c1e;
+    --md-sys-color-surface-container-high: #292a2d;
     --md-sys-color-on-surface: #e2e2e5;
-    --md-sys-color-surface-container: #1a1c1e;
+    --md-sys-color-on-surface-variant: #c2c7ce;
+    --md-sys-color-outline: #8c9198;
+    --md-sys-color-error: #ffb4ab;
   }
 }
 
 body {
   color: var(--md-sys-color-on-surface);
   background: var(--md-sys-color-surface);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply bg-[var(--md-sys-color-surface-container)] rounded-xl shadow-sm border;
+    border-color: rgb(var(--md-sys-color-outline) / 0.1);
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] 
+    rounded-full font-medium shadow-sm hover:opacity-90 transition-all
+    active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]
+    rounded-full font-medium shadow-sm hover:opacity-90 transition-all
+    active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 }
