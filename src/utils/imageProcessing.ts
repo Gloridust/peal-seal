@@ -1,11 +1,8 @@
 interface ProcessingParams {
-  hueThreshold: number;    // 色相阈值范围
-  satThreshold: number;    // 饱和度阈值
-  valueThreshold: number;  // 明度阈值
-  denoiseLevel: number;    // 降噪强度
-  sharpness: number;       // 锐化强度
   targetColors: string[];  // 目标颜色数组
   colorTolerance: number;  // 颜色容差
+  denoiseLevel: number;    // 降噪强度
+  sharpness: number;       // 锐化强度
 }
 
 export async function extractSeal(
@@ -82,35 +79,6 @@ export async function extractSeal(
     img.onerror = () => reject(new Error('图片加载失败'));
     img.src = imageData;
   });
-}
-
-// RGB 转 HSV
-function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-
-  let h = 0;
-  if (delta === 0) {
-    h = 0;
-  } else if (max === r) {
-    h = 60 * (((g - b) / delta) % 6);
-  } else if (max === g) {
-    h = 60 * ((b - r) / delta + 2);
-  } else {
-    h = 60 * ((r - g) / delta + 4);
-  }
-
-  if (h < 0) h += 360;
-
-  const s = max === 0 ? 0 : delta / max;
-  const v = max;
-
-  return [h, s, v];
 }
 
 // 局部对比度增强
@@ -302,7 +270,7 @@ function unsharpMasking(data: Uint8ClampedArray, width: number, height: number, 
   }
 }
 
-// 添加 RGB 颜色距离计算函数
+// RGB 颜色距离计算
 function getColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
   return Math.sqrt(
     Math.pow(r1 - r2, 2) +
@@ -311,7 +279,7 @@ function getColorDistance(r1: number, g1: number, b1: number, r2: number, g2: nu
   );
 }
 
-// 将十六进制颜色转换为 RGB
+// 十六进制颜色转 RGB
 function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) {
@@ -324,7 +292,7 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-// 修改颜色判断逻辑
+// 颜色判断逻辑
 function calculateColorScore(
   r: number,
   g: number,
