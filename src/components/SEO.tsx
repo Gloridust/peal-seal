@@ -11,7 +11,7 @@ export function SEO({
   title = 'PealSeal 印章剥离器',
   description = '专业的在线印章提取工具，支持多种颜色印章，一键提取并导出透明背景图片。适用于公章、私章、公司印章等各类印章提取。',
   keywords = ['印章提取', '公章提取', '印章剥离', '在线工具', '图片处理', '透明背景'],
-  ogImage = '/og-image.png'  // 需要添加一个默认的社交分享图
+  ogImage = '/og-image.png'  // 确保这个图片存在于 public 目录中
 }: SEOProps) {
   const fullTitle = `${title} - 在线印章提取工具`;
   

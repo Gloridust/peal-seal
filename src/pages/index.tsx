@@ -15,11 +15,8 @@ export default function Home() {
   const [params, setParams] = useState({
     targetColors: ['#FF0000'],  // 默认红色
     colorTolerance: 0.3,        // 颜色容差
-    hueThreshold: 30,    // 色相阈值范围 (0-180)
-    satThreshold: 0.3,   // 饱和度阈值 (0-1)
-    valueThreshold: 0.2, // 明度阈值 (0-1)
-    denoiseLevel: 0.5,   // 降噪强度 (0-1)
-    sharpness: 0.5,      // 锐化强度 (0-1)
+    denoiseLevel: 0.5,          // 降噪强度
+    sharpness: 0.5,             // 锐化强度
   });
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,43 +161,6 @@ export default function Home() {
                   info="控制边缘的清晰度。值越高，边缘越清晰，但可能会产生锯齿。如果印章边缘模糊，可以适当调高。"
                 />
               </div>
-
-              {/* 高级参数（默认折叠） */}
-              <details className="card p-4">
-                <summary className="text-sm font-medium mb-4 flex items-center gap-2 cursor-pointer">
-                  <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)]"></span>
-                  高级参数
-                </summary>
-                <div className="space-y-6 mt-4">
-                  <ParameterSlider
-                    label="色相范围"
-                    value={params.hueThreshold}
-                    onChange={(value) => handleParamChange({ ...params, hueThreshold: value })}
-                    min={0}
-                    max={180}
-                    step={1}
-                    info="控制红色识别的范围。值越大，可以识别更多偏离标准红色的颜色。如果印章颜色偏橙或偏紫，可以适当调高。"
-                  />
-                  <ParameterSlider
-                    label="饱和度阈值"
-                    value={params.satThreshold}
-                    onChange={(value) => handleParamChange({ ...params, satThreshold: value })}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    info="控制颜色的纯度要求。值越低，可以识别更浅的印章。如果印章颜色较浅或褪色，可以调低此值。"
-                  />
-                  <ParameterSlider
-                    label="明度阈值"
-                    value={params.valueThreshold}
-                    onChange={(value) => handleParamChange({ ...params, valueThreshold: value })}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    info="控制亮度要求。值越低，可以识别更暗的部分。如果印章与深色文字重叠，可以调低此值。"
-                  />
-                </div>
-              </details>
             </div>
 
             {/* 右侧图片区域 */}
